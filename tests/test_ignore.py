@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from leaklens.config import LeakLensConfig
 from leaklens.engine import ScanEngine
@@ -37,3 +38,18 @@ password = "prod_database_password"
 
     assert result.findings == []
     assert has_inline_ignore("# leaklens:ignore", "leaklens:ignore")
+
+
+def test_ignore_matcher_respects_gitignore(tmp_path: Path) -> None:
+    try:
+        subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True, text=True)
+    except OSError:
+        return
+
+    (tmp_path / ".gitignore").write_text("ignored.py\n", encoding="utf-8")
+    (tmp_path / "ignored.py").write_text('token = "ghp_abcdefghijklmnopqrstuvwxy123456ABCD"\n', encoding="utf-8")
+    (tmp_path / "tracked.py").write_text("print('ok')\n", encoding="utf-8")
+
+    matcher = IgnoreMatcher.from_files(tmp_path, [], set(), [])
+    assert matcher.should_ignore_path(tmp_path / "ignored.py")
+    assert not matcher.should_ignore_path(tmp_path / "tracked.py")

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import subprocess
 from fnmatch import fnmatch
 from pathlib import Path
 
@@ -16,11 +17,15 @@ class IgnoreMatcher:
         path_patterns: list[str] | None = None,
         allowlist_values: set[str] | None = None,
         allowlist_patterns: list[str] | None = None,
+        respect_gitignore: bool = True,
     ) -> None:
         self.root = root
         self.path_patterns = path_patterns or []
         self.allowlist_values = allowlist_values or set()
         self.allowlist_patterns: list[re.Pattern[str]] = []
+        self.respect_gitignore = respect_gitignore
+        self._gitignore_cache: dict[str, bool] = {}
+        self._git_repo = self._detect_git_repo()
 
         for pattern in allowlist_patterns or []:
             try:
@@ -58,6 +63,8 @@ class IgnoreMatcher:
         for pattern in self.path_patterns:
             if fnmatch(candidate, pattern) or fnmatch(path.name, pattern):
                 return True
+        if self.respect_gitignore and self._git_repo and self._is_git_ignored(path, candidate):
+            return True
         return False
 
     def is_allowlisted(self, value: str) -> bool:
@@ -65,6 +72,45 @@ class IgnoreMatcher:
         if value in self.allowlist_values:
             return True
         return any(pattern.search(value) for pattern in self.allowlist_patterns)
+
+    def _detect_git_repo(self) -> bool:
+        if not self.respect_gitignore:
+            return False
+        try:
+            result = subprocess.run(
+                ["git", "rev-parse", "--is-inside-work-tree"],
+                cwd=self.root,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+                text=True,
+            )
+        except OSError:
+            return False
+        return result.returncode == 0
+
+    def _is_git_ignored(self, path: Path, candidate: str) -> bool:
+        cached = self._gitignore_cache.get(candidate)
+        if cached is not None:
+            return cached
+
+        query = f"{candidate}/" if path.exists() and path.is_dir() else candidate
+        try:
+            result = subprocess.run(
+                ["git", "check-ignore", "-q", "--", query],
+                cwd=self.root,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+                text=True,
+            )
+        except OSError:
+            return False
+        ignored = result.returncode == 0
+        if result.returncode not in {0, 1}:
+            ignored = False
+        self._gitignore_cache[candidate] = ignored
+        return ignored
 
 
 INLINE_IGNORE_MARKERS = {"leaklens:ignore", "aicredleak:ignore", "credguard:ignore"}
