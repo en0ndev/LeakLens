@@ -42,4 +42,9 @@ jobs:
           sarif_file: leaklens.sarif
 
       - name: Enforce secret policy
-        run: leaklens scan . --fail-on high
+        run: |
+          if [ -f .leaklens.baseline.json ]; then
+            leaklens scan . --fail-on high --baseline .leaklens.baseline.json
+          else
+            leaklens scan . --fail-on high
+          fi

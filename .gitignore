@@ -6,3 +6,4 @@ __pycache__/
 .venv/
 .leaklens-cache.json
 .leaklens-baseline.json
+.leaklens.baseline.json
