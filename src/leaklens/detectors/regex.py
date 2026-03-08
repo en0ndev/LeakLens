@@ -175,6 +175,9 @@ def _passes_rule_heuristics(rule_name: str, value: str, line: str, line_lower: s
         marker = "-----BEGIN RSA PRIVATE KEY-----"
         return _is_unquoted_marker_line(line, marker)
 
+    if rule_name == "db_url_with_creds":
+        return not _is_templated_connection_string(normalized)
+
     return True
 
 
@@ -230,6 +233,19 @@ def _looks_like_jwt_header(token: str) -> bool:
     if not isinstance(payload, dict):
         return False
     return "alg" in payload or "typ" in payload
+
+
+def _is_templated_connection_string(value: str) -> bool:
+    lowered = value.lower()
+    if "${" in value or "{{" in value or "{" in value or "}" in value:
+        return True
+    if "<" in value or ">" in value or "..." in value:
+        return True
+    if "os.getenv(" in lowered or "process.env" in lowered:
+        return True
+    if "example" in lowered or "placeholder" in lowered:
+        return True
+    return False
 
 
 def _decode_base64url(segment: str) -> str | None:

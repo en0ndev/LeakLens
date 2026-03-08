@@ -39,3 +39,13 @@ def test_context_detector_ignores_auth_keyword_text_literal() -> None:
     matches = detector.scan_line("pyproject.toml", 8, line)
 
     assert not any(match.finding_type == "Auth Context Secret Literal" for match in matches)
+
+
+def test_context_detector_ignores_templated_connection_strings() -> None:
+    detector = ContextDetector()
+    line = (
+        'autofix = "postgresql://{os.getenv(\'DB_USER\')}:{os.getenv(\'DB_PASSWORD\')}@..."'
+    )
+    matches = detector.scan_line("detector.py", 21, line)
+
+    assert not any(match.finding_type == "Connection String Credential" for match in matches)

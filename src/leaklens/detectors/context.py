@@ -47,6 +47,8 @@ class ContextDetector:
 
         for match in CONNECTION_STRING_PATTERN.finditer(line):
             value = match.group(0)
+            if _is_templated_connection_string(value):
+                continue
             hits.append(
                 DetectionMatch(
                     finding_type="Connection String Credential",
@@ -229,6 +231,19 @@ def _should_skip_assignment_value(value: str) -> bool:
     if lowered.startswith(("./", "../", "/")):
         return True
     if "${" in stripped or "{{" in stripped:
+        return True
+    return False
+
+
+def _is_templated_connection_string(value: str) -> bool:
+    lowered = value.lower()
+    if "${" in value or "{{" in value or "{" in value or "}" in value:
+        return True
+    if "<" in value or ">" in value or "..." in value:
+        return True
+    if "os.getenv(" in lowered or "process.env" in lowered:
+        return True
+    if "example" in lowered or "placeholder" in lowered:
         return True
     return False
 

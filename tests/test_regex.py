@@ -45,3 +45,13 @@ def test_regex_detector_requires_jwt_context_keyword() -> None:
     matches = detector.scan_line("app.py", 5, line)
 
     assert not any(match.finding_type == "JWT Token" for match in matches)
+
+
+def test_regex_detector_ignores_templated_connection_strings() -> None:
+    detector = RegexDetector(builtin_rules())
+    line = (
+        'autofix = "postgresql://{os.getenv(\'DB_USER\')}:{os.getenv(\'DB_PASSWORD\')}@..."'
+    )
+    matches = detector.scan_line("detector.py", 6, line)
+
+    assert not any(match.finding_type == "Database URL Credentials" for match in matches)
