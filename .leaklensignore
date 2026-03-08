@@ -1,0 +1,3 @@
+# Local samples and generated assets
+examples/generated/**
+*.min.js

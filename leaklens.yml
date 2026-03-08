@@ -1,0 +1,26 @@
+entropy_threshold: 4.2
+severity_threshold: medium
+enabled_detectors:
+  - regex
+  - entropy
+  - context
+output:
+  default_format: terminal
+scan:
+  max_workers: 8
+ignored_paths:
+  - "node_modules/**"
+  - "dist/**"
+allowlist:
+  values:
+    - "example-secret"
+  patterns:
+    - "^test_[A-Za-z0-9]+$"
+rules:
+  - name: custom_internal_token
+    regex: "inttok_[A-Za-z0-9]{24}"
+    secret_type: "Internal API Token"
+    severity: high
+    confidence: 0.9
+    remediation: "Store internal tokens in your secret manager and inject via env vars."
+baseline_file: .leaklens-baseline.json
