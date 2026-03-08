@@ -9,6 +9,9 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,9 +30,13 @@ jobs:
         run: pytest
 
       - name: Run LeakLens report (SARIF)
+        continue-on-error: true
         run: leaklens report --format sarif --output leaklens.sarif
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: leaklens.sarif
+
+      - name: Enforce secret policy
+        run: leaklens scan . --fail-on high
