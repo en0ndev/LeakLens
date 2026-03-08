@@ -22,3 +22,11 @@ def test_entropy_detector_ignores_assignment_prefix_noise() -> None:
 
     values = [match.value for match in matches]
     assert "GITHUB_TOKEN=ghp_1234567890abcdefghijklmnopqrstuvwxyzABCD" not in values
+
+
+def test_entropy_detector_requires_context_for_shorter_random_values() -> None:
+    detector = EntropyDetector(threshold=3.8)
+    line = 'value = "A9xD2qLk0+/Yt7PwR3VmNs8H"'
+    matches = detector.scan_line("app.py", 1, line)
+
+    assert not matches

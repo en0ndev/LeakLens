@@ -17,6 +17,9 @@ UUID_PATTERN = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", re.IGNORECASE
 )
 HEX_DIGEST_PATTERN = re.compile(r"^[0-9a-f]{32}$|^[0-9a-f]{40}$|^[0-9a-f]{64}$", re.IGNORECASE)
+SECRET_CONTEXT_PATTERN = re.compile(
+    r"(?i)\b(password|passwd|secret|token|api[_-]?key|auth|credential|private[_-]?key|access[_-]?key|bearer|jwt)\b"
+)
 
 
 class EntropyDetector:
@@ -29,6 +32,7 @@ class EntropyDetector:
         """Evaluate high-entropy candidate tokens in one line."""
         del file_path, line_number
         hits: list[DetectionMatch] = []
+        line_has_context = bool(SECRET_CONTEXT_PATTERN.search(line))
 
         for value, start, end in _extract_candidates(line):
             if _skip_candidate(value):
@@ -36,6 +40,8 @@ class EntropyDetector:
 
             entropy = shannon_entropy(value)
             if entropy < self.threshold:
+                continue
+            if not line_has_context and (len(value) < 32 or entropy < (self.threshold + 0.6)):
                 continue
 
             confidence = min(0.92, 0.48 + (entropy - self.threshold) * 0.18)

@@ -27,7 +27,7 @@ BUILTIN_RULES: list[RuleSpec] = [
     RuleSpec(
         name="github_token",
         secret_type="GitHub Token",
-        pattern=r"\bgh[pousr]_[A-Za-z0-9]{36,255}\b",
+        pattern=r"\b(?:gh[pousr]_[A-Za-z0-9]{36,255}|github_pat_[A-Za-z0-9_]{20,255})\b",
         severity=Severity.HIGH,
         confidence=0.95,
         risk="GitHub tokens can be used to access repositories, secrets, and workflows.",

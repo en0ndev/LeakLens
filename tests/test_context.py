@@ -23,3 +23,19 @@ def test_context_detector_ignores_non_secret_paths() -> None:
     matches = detector.scan_line("settings.py", 4, line)
 
     assert not any(match.finding_type == "Suspicious Hardcoded Credential" for match in matches)
+
+
+def test_context_detector_ignores_expression_assignment() -> None:
+    detector = ContextDetector()
+    line = 'secret_type = entry.get("secret_type")'
+    matches = detector.scan_line("config.py", 12, line)
+
+    assert matches == []
+
+
+def test_context_detector_ignores_auth_keyword_text_literal() -> None:
+    detector = ContextDetector()
+    line = 'description = "Production-grade credential and secret detection tool"'
+    matches = detector.scan_line("pyproject.toml", 8, line)
+
+    assert not any(match.finding_type == "Auth Context Secret Literal" for match in matches)

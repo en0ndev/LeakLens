@@ -2,6 +2,4 @@
 examples/generated/**
 examples/vulnerable_repo/**
 tests/**
-src/leaklens/rules.py
-src/leaklens/detectors/context.py
 *.min.js
