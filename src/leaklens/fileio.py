@@ -49,8 +49,13 @@ def _scan_allowed(path: Path, config: LeakLensConfig, ignore: IgnoreMatcher) -> 
     if is_binary_file(path):
         return False
 
-    if path.name == ".env":
+    if _is_dotenv_style(path):
         return True
 
     suffix = path.suffix.lower()
     return suffix in config.include_extensions
+
+
+def _is_dotenv_style(path: Path) -> bool:
+    """Return True for dotenv files like .env and .env.example."""
+    return path.name == ".env" or path.name.startswith(".env.")

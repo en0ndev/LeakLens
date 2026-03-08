@@ -20,6 +20,20 @@ def test_engine_suppresses_entropy_when_regex_hits_same_value(tmp_path: Path) ->
     assert result.findings[0].finding_type == "GitHub Token"
 
 
+def test_engine_scans_dotenv_example_file(tmp_path: Path) -> None:
+    env_file = tmp_path / ".env.example"
+    env_file.write_text(
+        "GITHUB_TOKEN=ghp_1234567890abcdefghijklmnopqrstuvwxyzABCD\n",
+        encoding="utf-8",
+    )
+
+    engine = ScanEngine(LeakLensConfig(), repo_root=tmp_path)
+    result = engine.scan_repository(tmp_path)
+
+    assert any(finding.file_path.endswith(".env.example") for finding in result.findings)
+    assert any(finding.finding_type == "GitHub Token" for finding in result.findings)
+
+
 def test_staged_scan_skips_dist_directory(tmp_path: Path) -> None:
     subprocess.run(["git", "init"], cwd=tmp_path, check=True, stdout=subprocess.PIPE)
 

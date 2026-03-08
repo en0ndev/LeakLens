@@ -180,6 +180,7 @@ class ScanEngine:
                 remediation=remediations,
                 autofix=autofixes,
                 fingerprint=build_fingerprint(file_path, line_number, top_match.finding_type, value),
+                raw_value=value,
             )
 
             if self.baseline.contains(finding):
@@ -218,9 +219,14 @@ def _resolve_baseline_path(repo_root: Path, baseline_file: str | None) -> Path |
 
 
 def _is_supported_by_extension(path: Path, config: LeakLensConfig) -> bool:
-    if path.name == ".env":
+    if _is_dotenv_style(path):
         return True
     return path.suffix.lower() in config.include_extensions
+
+
+def _is_dotenv_style(path: Path) -> bool:
+    """Return True for dotenv files like .env and .env.example."""
+    return path.name == ".env" or path.name.startswith(".env.")
 
 
 def _is_comment_line(line: str) -> bool:

@@ -1,4 +1,5 @@
 from pathlib import Path
+from unittest.mock import patch
 
 from typer.testing import CliRunner
 
@@ -22,3 +23,15 @@ def test_cli_version_flag() -> None:
 
     assert result.exit_code == 0
     assert "leaklens" in result.stdout
+
+
+def test_cli_scan_verify_invokes_verification(tmp_path: Path) -> None:
+    app_file = tmp_path / "app.py"
+    app_file.write_text('token = "ghp_1234567890abcdefghijklmnopqrstuvwxyzABCD"\n', encoding="utf-8")
+
+    runner = CliRunner()
+    with patch("leaklens.cli.verify_findings") as mock_verify:
+        result = runner.invoke(app, ["scan", str(tmp_path), "--verify", "--fail-on", "critical"])
+
+    assert result.exit_code == 0
+    assert mock_verify.called

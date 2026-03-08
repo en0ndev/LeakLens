@@ -14,6 +14,7 @@ from .engine import ScanEngine, should_fail
 from .models import ScanResult, Severity
 from .reporters import render_json, render_sarif, render_terminal
 from .rules import format_rule_listing
+from .verification import verify_findings
 
 app = typer.Typer(
     help="LeakLens: Git credential and secret detection.",
@@ -65,9 +66,16 @@ def scan(
     write_baseline: Optional[Path] = typer.Option(
         None, "--write-baseline", help="Write current findings as baseline fingerprints."
     ),
+    verify: bool = typer.Option(
+        False,
+        "--verify",
+        help="Attempt provider checks for supported secret types (network calls; secrets are never printed).",
+    ),
 ) -> None:
     """Run a scan in repository, staged, commit, or diff mode."""
     result, cfg = _run_scan(target, staged=staged, commit=commit, diff=diff, config_path=config, baseline=baseline)
+    if verify and result.findings:
+        verify_findings(result.findings)
 
     selected_format = output_format or cfg.default_output_format
     rendered = _render(result, selected_format)
@@ -98,9 +106,16 @@ def report(
     output: Optional[Path] = typer.Option(
         None, "--output", "-o", help="Write report to file instead of stdout."
     ),
+    verify: bool = typer.Option(
+        False,
+        "--verify",
+        help="Attempt provider checks for supported secret types (network calls; secrets are never printed).",
+    ),
 ) -> None:
     """Generate CI-oriented JSON or SARIF report output."""
     result, cfg = _run_scan(target, staged=staged, commit=commit, diff=diff, config_path=config, baseline=baseline)
+    if verify and result.findings:
+        verify_findings(result.findings)
 
     rendered = _render(result, output_format)
     _emit(rendered, output)

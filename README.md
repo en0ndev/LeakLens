@@ -28,6 +28,7 @@ LeakLens helps developers catch those leaks early:
 - `leaklens rules list`
 - `leaklens report --format json`
 - `leaklens report --format sarif`
+- `leaklens scan --verify` (optional provider/syntax verification)
 
 Deterministic CI behavior:
 
@@ -76,6 +77,7 @@ Command quick reference:
 | `leaklens scan --staged` | Staged changes scan |
 | `leaklens scan --commit <hash>` | Single commit scan |
 | `leaklens scan --diff <base> <head>` | Commit-range diff scan |
+| `leaklens scan --verify` | Scan and attempt verification of supported secret types |
 | `leaklens rules list` | List active rules |
 | `leaklens report --format json` | CI JSON report |
 | `leaklens report --format sarif` | SARIF report for code scanning |
@@ -134,6 +136,12 @@ Fail threshold override:
 leaklens scan . --fail-on high
 ```
 
+Scan with verification:
+
+```bash
+leaklens scan . --verify
+```
+
 Run as module:
 
 ```bash
@@ -145,6 +153,23 @@ Exit code semantics:
 - `0`: no findings at/above fail threshold
 - `1`: findings at/above fail threshold
 - `2`: CLI usage/configuration errors
+
+## Verification mode
+
+LeakLens supports optional verification with `--verify` for selected finding types.
+
+- GitHub tokens: checked via GitHub API
+- Stripe keys: checked via Stripe API
+- Slack tokens: checked via Slack API
+- JWTs: syntax/expiry checks (signature not validated)
+
+Verification status is included in JSON/SARIF output and shown in terminal output when enabled.
+
+Notes:
+
+- Verification makes outbound network requests.
+- Secrets are never printed in full.
+- Unsupported types are marked as `unverifiable` instead of assumed valid.
 
 ## Configuration
 
@@ -177,6 +202,8 @@ baseline_file: .leaklens-baseline.json
 - allowlist values and patterns in config
 - baseline suppression via fingerprints
 - legacy compatibility: `.aicredleakignore` and `aicredleak:ignore` are also accepted
+- `.gitignore` is respected automatically
+- dotenv variants are scanned: `.env`, `.env.local`, `.env.example`, `.env.*`
 
 Generate baseline from current findings:
 
@@ -232,7 +259,7 @@ examples/
 
 ## Limitations
 
-- No live credential validity checks by default (offline-safe behavior)
+- Verification is optional (`--verify`) and currently limited to supported providers
 - Context detection is heuristic and may produce false positives in edge cases
 - Binary and generated minified assets are intentionally skipped
 - LeakLens does not rewrite source files automatically; autofix output is advisory guidance

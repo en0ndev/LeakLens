@@ -30,12 +30,18 @@ def render_terminal(result: ScanResult) -> str:
 
 def _render_finding(finding: Finding) -> str:
     sources = ",".join(source.value for source in finding.detector_source)
-    return "\n".join(
+    lines = [
+        f"[{finding.severity.value.upper()}] {finding.finding_type}",
+        f"Location: {finding.file_path}:{finding.line_number}",
+        f"Confidence: {finding.confidence:.2f} | Detector(s): {sources}",
+        f"Preview: {finding.preview}",
+    ]
+    if finding.verification_status.value != "not_checked":
+        lines.append(f"Verification: {finding.verification_status.value}")
+        if finding.verification_detail:
+            lines.append(f"Verification Detail: {finding.verification_detail}")
+    lines.extend(
         [
-            f"[{finding.severity.value.upper()}] {finding.finding_type}",
-            f"Location: {finding.file_path}:{finding.line_number}",
-            f"Confidence: {finding.confidence:.2f} | Detector(s): {sources}",
-            f"Preview: {finding.preview}",
             f"Risk: {finding.why_risky}",
             f"Safer Alternative: {finding.safer_alternative}",
             f"Remediation: {finding.remediation}",
@@ -43,3 +49,4 @@ def _render_finding(finding: Finding) -> str:
             f"Fingerprint: {finding.fingerprint}",
         ]
     )
+    return "\n".join(lines)

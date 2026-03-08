@@ -43,7 +43,10 @@ def _build_rules(findings: list[Finding]) -> list[dict[str, object]]:
             "help": {
                 "text": f"{finding.remediation} {finding.safer_alternative} Autofix: {finding.autofix}",
             },
-            "properties": {"security-severity": f"{finding.confidence:.2f}"},
+            "properties": {
+                "security-severity": f"{finding.confidence:.2f}",
+                "verification-status": finding.verification_status.value,
+            },
         }
     return [rules[key] for key in sorted(rules)]
 
@@ -53,7 +56,7 @@ def _finding_to_result(finding: Finding) -> dict[str, object]:
         "ruleId": _rule_id(finding),
         "level": _sarif_level(finding.severity.value),
         "message": {
-            "text": f"{finding.finding_type} detected. {finding.why_risky} Remediation: {finding.remediation}",
+            "text": _build_message(finding),
         },
         "locations": [
             {
@@ -64,7 +67,20 @@ def _finding_to_result(finding: Finding) -> dict[str, object]:
             }
         ],
         "partialFingerprints": {"primaryLocationLineHash": finding.fingerprint},
+        "properties": {"verification-status": finding.verification_status.value},
     }
+
+
+def _build_message(finding: Finding) -> str:
+    base = f"{finding.finding_type} detected. {finding.why_risky} Remediation: {finding.remediation}"
+    if finding.verification_status.value == "not_checked":
+        return base
+    if finding.verification_detail:
+        return (
+            f"{base} Verification: {finding.verification_status.value} "
+            f"({finding.verification_detail})"
+        )
+    return f"{base} Verification: {finding.verification_status.value}."
 
 
 def _rule_id(finding: Finding) -> str:

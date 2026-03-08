@@ -33,6 +33,18 @@ class DetectorSource(str, Enum):
     CONTEXT = "context"
 
 
+class VerificationStatus(str, Enum):
+    """Verification outcome states for optional post-scan checks."""
+
+    NOT_CHECKED = "not_checked"
+    VERIFIED_ACTIVE = "verified_active"
+    VERIFIED_INVALID = "verified_invalid"
+    LIKELY_SECRET = "likely_secret"
+    PLACEHOLDER = "placeholder"
+    UNVERIFIABLE = "unverifiable"
+    VERIFICATION_ERROR = "verification_error"
+
+
 @dataclass(frozen=True)
 class RuleSpec:
     """A secret detection rule specification."""
@@ -80,6 +92,9 @@ class Finding:
     remediation: str
     autofix: str
     fingerprint: str
+    verification_status: VerificationStatus = VerificationStatus.NOT_CHECKED
+    verification_detail: str = ""
+    raw_value: str = field(default="", repr=False)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize finding to a deterministic dictionary."""
@@ -96,6 +111,8 @@ class Finding:
             "remediation": self.remediation,
             "autofix": self.autofix,
             "fingerprint": self.fingerprint,
+            "verification_status": self.verification_status.value,
+            "verification_detail": self.verification_detail,
         }
 
 
